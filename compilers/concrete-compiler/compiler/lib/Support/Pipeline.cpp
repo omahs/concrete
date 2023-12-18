@@ -174,6 +174,17 @@ tileMarkedLinalg(mlir::MLIRContext &context, mlir::ModuleOp &module,
 }
 
 mlir::LogicalResult
+buildDataflowTasksFromTiles(mlir::MLIRContext &context, mlir::ModuleOp &module,
+                            std::function<bool(mlir::Pass *)> enablePass) {
+  mlir::PassManager pm(&context);
+  pipelinePrinting("BuildDataflowTasksFromTiles", pm, context);
+  addPotentiallyNestedPass(
+      pm, mlir::concretelang::createDataflowTasksFromTilesPass(), enablePass);
+
+  return pm.run(module.getOperation());
+}
+
+mlir::LogicalResult
 markFHELinalgForTiling(mlir::MLIRContext &context, mlir::ModuleOp &module,
                        llvm::ArrayRef<int64_t> tileSizes,
                        std::function<bool(mlir::Pass *)> enablePass) {

@@ -43,6 +43,16 @@ def BuildDataflowTaskGraph : Pass<"BuildDataflowTaskGraph", "mlir::func::FuncOp"
   }];
 }
 
+def BuildDataflowTasksFromTiles : Pass<"BuildDataflowTasksFromTiles", "mlir::func::FuncOp"> {
+  let summary =
+      "Wrap operations resulting from tiling into dataflow tasks.";
+
+  let description = [{
+  This pass creates one dataflow task for each operation that carries
+  the "is_tile" boolean attribute set to `true`.
+  }];
+}
+
 def BufferizeDataflowTaskOps : Pass<"BufferizeDataflowTaskOps", "mlir::ModuleOp"> {
   let summary =
       "Bufferize DataflowTaskOp(s).";

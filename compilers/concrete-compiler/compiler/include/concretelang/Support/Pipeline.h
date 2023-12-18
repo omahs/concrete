@@ -42,6 +42,10 @@ tileMarkedLinalg(mlir::MLIRContext &context, mlir::ModuleOp &module,
                  bool markTiles, std::function<bool(mlir::Pass *)> enablePass);
 
 mlir::LogicalResult
+buildDataflowTasksFromTiles(mlir::MLIRContext &context, mlir::ModuleOp &module,
+                            std::function<bool(mlir::Pass *)> enablePass);
+
+mlir::LogicalResult
 lowerLinalgToLoops(mlir::MLIRContext &context, mlir::ModuleOp &module,
                    std::function<bool(mlir::Pass *)> enablePass,
                    bool parallelizeLoops);

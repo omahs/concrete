@@ -19,6 +19,7 @@ class RewritePatternSet;
 namespace concretelang {
 std::unique_ptr<mlir::Pass>
 createBuildDataflowTaskGraphPass(bool debug = false);
+std::unique_ptr<mlir::Pass> createDataflowTasksFromTilesPass();
 std::unique_ptr<mlir::Pass> createLowerDataflowTasksPass(bool debug = false);
 std::unique_ptr<mlir::Pass>
 createBufferizeDataflowTaskOpsPass(bool debug = false);

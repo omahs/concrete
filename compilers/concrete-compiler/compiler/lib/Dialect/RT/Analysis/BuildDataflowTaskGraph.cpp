@@ -143,6 +143,11 @@ struct BuildDataflowTaskGraphPass
     module.walk([&](mlir::func::FuncOp func) {
       if (!func->getAttr("_dfr_work_function_attribute"))
         func.walk<mlir::WalkOrder::PreOrder>([&](mlir::Operation *childOp) {
+          // Do not look for operations to seed task within tasks generated
+          // earlier in the compilation pipeline
+          if (llvm::dyn_cast<RT::DataflowTaskOp>(childOp))
+            return WalkResult::skip();
+
           return this->processOperation(childOp);
         });
 
@@ -203,6 +208,91 @@ protected:
 
 std::unique_ptr<mlir::Pass> createBuildDataflowTaskGraphPass(bool debug) {
   return std::make_unique<BuildDataflowTaskGraphPass>(debug);
+}
+
+struct BuildDataflowTasksFromTilesPass
+    : public BuildDataflowTasksFromTilesBase<BuildDataflowTasksFromTilesPass> {
+
+  void runOnOperation() override {
+    auto module = getOperation();
+    OpBuilder builder(module.getContext());
+
+    module.walk([&](Operation *op) {
+      if (!isTileOp(op))
+        return WalkResult::advance();
+
+      SetVector<Value> deps;
+
+      // Operands of the op to be put into the task and all values
+      // defined above the op must be passed to the task as arguments
+      for (Value operand : op->getOperands())
+        deps.insert(operand);
+
+      for (Region &region : op->getRegions()) {
+        getUsedValuesDefinedAbove(region, deps);
+      }
+
+      // Check that none of the dependencies has buffer semantics
+      for (Value dep : deps) {
+        if (dep.getType().template isa<MemRefType>())
+          return WalkResult::advance();
+      }
+
+      // Build the dataflow task
+      builder.setInsertionPointAfter(op);
+
+      std::vector<mlir::Value> depsVec = deps.takeVector();
+
+      RT::DataflowTaskOp dftop = builder.create<RT::DataflowTaskOp>(
+          op->getLoc(), op->getResultTypes(), depsVec);
+
+      // Remap dependencies of the original operation to the arguments
+      // of the dataflow task
+      IRMapping mapping;
+
+      for (auto [origDep, newDep] :
+           llvm::zip_equal(deps, dftop.getRegion().getArguments())) {
+        mapping.map(origDep, newDep);
+      }
+
+      // Clone operation to be put into the task with the remapping
+      // for dependencies
+      builder.setInsertionPoint(&dftop.getRegion().getBlocks().front(),
+                                dftop.getRegion().getBlocks().front().begin());
+      Operation *clonedOp = builder.clone(*op, mapping);
+
+      // Yield results from within the task and replace results of the
+      // original op with the results of the dataflow task
+      builder.create<RT::DataflowYieldOp>(dftop.getLoc(), mlir::TypeRange{},
+                                          clonedOp->getResults());
+
+      Region *parentRegion = op->getParentRegion();
+      assert(parentRegion);
+
+      for (auto [oldRes, newRes] :
+           llvm::zip_equal(op->getResults(), dftop.getResults())) {
+        replaceAllUsesInRegionWith(oldRes, newRes, *parentRegion);
+      }
+
+      // The old operation is guaranteed to be without users.
+      op->erase();
+
+      // Do not descend into a tile operation itself
+      return WalkResult::skip();
+    });
+  }
+
+protected:
+  static bool isTileOp(mlir::Operation *op) {
+    if (mlir::BoolAttr tileAttr = op->getAttrOfType<mlir::BoolAttr>("is_tile"))
+      return tileAttr.getValue();
+
+    return false;
+  }
+};
+
+std::unique_ptr<mlir::Pass> createDataflowTasksFromTilesPass() {
+  return std::make_unique<BuildDataflowTasksFromTilesPass>();
 }
 
 } // end namespace concretelang

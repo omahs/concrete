@@ -390,14 +390,21 @@ CompilerEngine::compile(mlir::ModuleOp moduleOp, Target target,
   if (target == Target::FHE_LINALG_GENERIC)
     return std::move(res);
 
-  if (mlir::concretelang::pipeline::tileMarkedLinalg(mlirContext, module,
-                                                     enablePass)
+  if (mlir::concretelang::pipeline::tileMarkedLinalg(
+          mlirContext, module, dataflowParallelize, enablePass)
           .failed()) {
     return StreamStringError("Tiling of Linalg operations failed");
   }
 
   if (target == Target::FHE_TILED_LINALG_GENERIC)
     return std::move(res);
+
+  if (dataflowParallelize) {
+    if (mlir::concretelang::pipeline::buildDataflowTasksFromTiles(
+            mlirContext, module, enablePass)
+            .failed()) {
+      return StreamStringError("Building dataflow tasks from tiles failed");
+    }
   }
 
   if (mlir::concretelang::pipeline::lowerLinalgToLoops(
