@@ -29,12 +29,15 @@ namespace concretelang {
 static const mlir::StringLiteral kTransformMarker =
     "__internal_tiling_marker__";
 
+static const mlir::StringLiteral kTileMarker = "is_tile";
+
 class GenericTilingPattern
     : public mlir::OpRewritePattern<mlir::linalg::GenericOp> {
 public:
-  GenericTilingPattern(mlir::MLIRContext *context)
+  GenericTilingPattern(mlir::MLIRContext *context, bool annotateTileOps = false)
       : mlir::OpRewritePattern<mlir::linalg::GenericOp>(
-            context, ::mlir::concretelang::DEFAULT_PATTERN_BENEFIT) {}
+            context, ::mlir::concretelang::DEFAULT_PATTERN_BENEFIT),
+        annotateTileOps(annotateTileOps) {}
 
   // Copied from llvm-project/mlir/lib/Dialect/Linalg/Transforms/Tiling.cpp
   static llvm::SmallVector<mlir::OpFoldResult> calculateNumThreadsFromTileSizes(
@@ -98,6 +101,10 @@ public:
       mlir::LogicalResult lres = res;
 
       if (lres.succeeded()) {
+        if (annotateTileOps) {
+          res.value().tiledOp->setAttr(kTileMarker, rewriter.getBoolAttr(true));
+        }
+        res.value().tiledOp->removeAttr("tile-sizes");
         res.value().tileOp->setAttr(kTransformMarker, rewriter.getUnitAttr());
         res.value().tiledOp->setAttr(kTransformMarker, rewriter.getUnitAttr());
         rewriter.replaceOp(op.getOperation(), res.value().tileOp->getResults());
@@ -138,6 +145,12 @@ public:
       mlir::LogicalResult lres = res;
 
       if (lres.succeeded()) {
+        if (annotateTileOps) {
+          res.value().parallelTiledOp->setAttr(kTileMarker,
+                                               rewriter.getBoolAttr(true));
+        }
+
+        res.value().parallelTiledOp->removeAttr("tile-sizes");
         res.value().parallelTiledOp->setAttr(kTransformMarker,
                                              rewriter.getUnitAttr());
         res.value().mergeOp->setAttr(kTransformMarker, rewriter.getUnitAttr());
@@ -150,17 +163,23 @@ public:
 
     return mlir::failure();
   }
+
+protected:
+  bool annotateTileOps;
 };
 
 /// Perfoms the actual tiling of `FHELinalg.matmul_eint_int`
 /// operations that have been marked with a "tile-sizes" attribute.
 class LinalgTilingPass : public LinalgTilingBase<LinalgTilingPass> {
 public:
+  LinalgTilingPass(bool annotateTileOps = false)
+      : annotateTileOps(annotateTileOps) {}
+
   void runOnOperation() override {
     mlir::Operation *op = getOperation();
 
     mlir::RewritePatternSet patterns(op->getContext());
-    patterns.add<GenericTilingPattern>(op->getContext());
+    patterns.add<GenericTilingPattern>(op->getContext(), annotateTileOps);
 
     if (mlir::applyPatternsAndFoldGreedily(op, std::move(patterns)).failed()) {
       this->signalPassFailure();
@@ -168,6 +187,9 @@ public:
 
     op->walk([](mlir::Operation *op) { op->removeAttr(kTransformMarker); });
   }
+
+protected:
+  bool annotateTileOps;
 };
 
 /// Marks all `FHELinalg.matmul_eint_int` operations that with a
@@ -193,8 +215,9 @@ protected:
   std::vector<int64_t> tileSizes;
 };
 
-std::unique_ptr<mlir::OperationPass<>> createLinalgTilingPass() {
-  return std::make_unique<LinalgTilingPass>();
+std::unique_ptr<mlir::OperationPass<>>
+createLinalgTilingPass(bool annotateTileOps) {
+  return std::make_unique<LinalgTilingPass>(annotateTileOps);
 }
 
 std::unique_ptr<mlir::OperationPass<>>

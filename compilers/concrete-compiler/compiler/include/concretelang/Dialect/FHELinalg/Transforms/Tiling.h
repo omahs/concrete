@@ -18,7 +18,8 @@ namespace concretelang {
 std::unique_ptr<mlir::OperationPass<>>
 createFHELinalgTilingMarkerPass(llvm::ArrayRef<int64_t> tileSizes);
 
-std::unique_ptr<mlir::OperationPass<>> createLinalgTilingPass();
+std::unique_ptr<mlir::OperationPass<>>
+createLinalgTilingPass(bool annotateTileOps = false);
 } // namespace concretelang
 } // namespace mlir
 

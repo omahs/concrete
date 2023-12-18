@@ -160,11 +160,11 @@ mlir::LogicalResult autopar(mlir::MLIRContext &context, mlir::ModuleOp &module,
 
 mlir::LogicalResult
 tileMarkedLinalg(mlir::MLIRContext &context, mlir::ModuleOp &module,
-                 std::function<bool(mlir::Pass *)> enablePass) {
+                 bool markTiles, std::function<bool(mlir::Pass *)> enablePass) {
   mlir::PassManager pm(&context);
   pipelinePrinting("TileMarkedLinalg", pm, context);
-  addPotentiallyNestedPass(pm, mlir::concretelang::createLinalgTilingPass(),
-                           enablePass);
+  addPotentiallyNestedPass(
+      pm, mlir::concretelang::createLinalgTilingPass(markTiles), enablePass);
 
   addPotentiallyNestedPass(
       pm, mlir::concretelang::createLinalgFillToLinalgGenericPass(),

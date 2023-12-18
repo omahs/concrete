@@ -39,7 +39,7 @@ lowerFHELinalgToLinalg(mlir::MLIRContext &context, mlir::ModuleOp &module,
 
 mlir::LogicalResult
 tileMarkedLinalg(mlir::MLIRContext &context, mlir::ModuleOp &module,
-                 std::function<bool(mlir::Pass *)> enablePass);
+                 bool markTiles, std::function<bool(mlir::Pass *)> enablePass);
 
 mlir::LogicalResult
 lowerLinalgToLoops(mlir::MLIRContext &context, mlir::ModuleOp &module,
