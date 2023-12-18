@@ -396,6 +396,10 @@ CompilerEngine::compile(mlir::ModuleOp moduleOp, Target target,
     return StreamStringError("Tiling of Linalg operations failed");
   }
 
+  if (target == Target::FHE_TILED_LINALG_GENERIC)
+    return std::move(res);
+  }
+
   if (mlir::concretelang::pipeline::lowerLinalgToLoops(
           mlirContext, module, enablePass, loopParallelize)
           .failed()) {

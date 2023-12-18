@@ -229,6 +229,10 @@ public:
     /// from the Linalg dialect
     FHE_LINALG_GENERIC,
 
+    /// Read sources, lower all FHELinalg operations to operations
+    /// from the Linalg dialect and dump tiled code if tiling applies
+    FHE_TILED_LINALG_GENERIC,
+
     /// Read sources and lower all the FHELinalg operations to FHE operations
     /// and scf loops
     FHE_NO_LINALG,

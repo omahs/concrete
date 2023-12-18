@@ -52,6 +52,7 @@ enum Action {
   ROUND_TRIP,
   DUMP_FHE,
   DUMP_FHE_LINALG_GENERIC,
+  DUMP_FHE_TILED_LINALG_GENERIC,
   DUMP_FHE_NO_LINALG,
   DUMP_TFHE,
   DUMP_NORMALIZED_TFHE,
@@ -142,6 +143,10 @@ static llvm::cl::opt<enum Action> action(
     llvm::cl::values(clEnumValN(Action::DUMP_FHE_LINALG_GENERIC,
                                 "dump-fhe-linalg-generic",
                                 "Lower FHELinalg to Linalg and dump result")),
+    llvm::cl::values(clEnumValN(Action::DUMP_FHE_TILED_LINALG_GENERIC,
+                                "dump-fhe-tiled-linalg-generic",
+                                "Lower FHELinalg to Linalg and dump tiles "
+                                "operations if tiling applies")),
     llvm::cl::values(clEnumValN(Action::DUMP_FHE_NO_LINALG,
                                 "dump-fhe-no-linalg",
                                 "Lower FHELinalg to FHE and dump result")),
@@ -583,6 +588,10 @@ mlir::LogicalResult processInputBuffer(
     break;
   case Action::DUMP_FHE_LINALG_GENERIC:
     target = mlir::concretelang::CompilerEngine::Target::FHE_LINALG_GENERIC;
+    break;
+  case Action::DUMP_FHE_TILED_LINALG_GENERIC:
+    target =
+        mlir::concretelang::CompilerEngine::Target::FHE_TILED_LINALG_GENERIC;
     break;
   case Action::DUMP_FHE_NO_LINALG:
     target = mlir::concretelang::CompilerEngine::Target::FHE_NO_LINALG;
