@@ -58,9 +58,15 @@ public:
   void testOnce() {
     for (auto tests_rep = 0; tests_rep <= options.numberOfRetry; tests_rep++) {
       // We execute the circuit.
-      auto maybeRes = testCircuit->call(args);
+      auto maybeRes =
+          testCircuit->call((mlir::concretelang::dfr::_dfr_is_root_node())
+                                ? args
+                                : std::vector<Value>());
       ASSERT_OUTCOME_HAS_VALUE(maybeRes);
       auto result = maybeRes.value();
+
+      if (!mlir::concretelang::dfr::_dfr_is_root_node())
+        return;
 
       /* Check results */
       bool allgood = true;

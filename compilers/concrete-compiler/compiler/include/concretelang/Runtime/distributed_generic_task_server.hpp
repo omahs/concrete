@@ -258,6 +258,8 @@ struct GenericComputeServer : component_base<GenericComputeServer> {
         inputs.wfn_name);
     std::vector<void *> outputs;
 
+    _dfr_debug_print_task(inputs.wfn_name.c_str(), inputs.params.size(),
+                          inputs.output_sizes.size());
     switch (inputs.output_sizes.size()) {
 
 #include "concretelang/Runtime/generated/dfr_task_work_function_calls.h"
