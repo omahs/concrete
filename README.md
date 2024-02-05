@@ -5,14 +5,14 @@
 <hr/>
 
 <p align="center">
-  <a href="https://docs.zama.ai/concrete"> 📒 Read documentation</a> | <a href="https://zama.ai/community"> 💛 Community support</a> | <a href="https://github.com/zama-ai/awesome-zama"> 📚 FHE resources</a>
+  <a href="https://docs.zama.ai/concrete"> 📒 Documentation</a> | <a href="https://zama.ai/community"> 💛 Community support</a> | <a href="https://github.com/zama-ai/awesome-zama"> 📚 FHE resources</a>
 </p>
 <p align="center">
 <!-- Version badge using shields.io -->
   <a href="https://github.com/zama-ai/concrete/releases">
     <img src="https://img.shields.io/github/v/release/zama-ai/concrete?style=flat-square">
   </a>
-  <!-- Link to tutorials badge using shields.io -->
+  <!-- License badge -->
   <a href="#license">
     <img src="https://img.shields.io/badge/License-BSD--3--Clause--Clear-orange?style=flat-square">
   </a>
@@ -45,24 +45,25 @@
 ## About
 
 ### 🟨 What is Concrete
-Concrete is an open-source FHE Compiler which simplifies the use of fully homomorphic encryption (FHE).
+**Concrete** is an open-source FHE Compiler that simplifies the use of fully homomorphic encryption (FHE).
 
-FHE is a powerful cryptographic tool, which allows computation to be performed directly on encrypted data without needing to decrypt it first. With FHE, you can build services that preserve privacy for all users. FHE is also great against data breaches as everything is done on encrypted data. Even if the server is compromised, in the end no sensitive data is leaked.
+Fully Homomorphic Encryption (FHE) is a robust cryptographic tool that enables performing computations on encrypted data directly without the need to decrypt it first. FHE allows developers to build services that ensure privacy for all users. FHE is also an excellent solution against data breaches as everything is performed on encrypted data. Even if the server is compromised, no sensitive data will be leaked.
 
-Since writing FHE programs can be difficult, Concrete, based on LLVM, make this process easier for developers. Concrete is a generic library that supports a variety of use cases. If you have a specific use case, or a specific field of computation, you may want to build abstractions on top of Concrete. One such example is [Concrete ML](https://github.com/zama-ai/concrete-ml), which is built on top of Concrete to simplify Machine Learning oriented use cases.
+Writing FHE programs can be a challenging task for developers. Concrete framework, containing a TFHE Compiler based on LLVM, makes this process easier. 
+
+Concrete is a versatile library that can be used for a variety of purposes. If you have a specific use case or field of computation, you may want to create abstractions on top of Concrete.  For instance, [Concrete ML](https://github.com/zama-ai/concrete-ml) is built on top of Concrete to simplify Machine-Learning oriented use cases.
 <br></br>
+
 
 ### 🟨 Main features
-Concrete features include:
-- Ability to compile Python functions (that may include NumPy) to their FHE equivalents, to operate on encrypted data
-- Support for [large collection of operators](https://docs.zama.ai/concrete/getting-started/compatibility)
-- Partial support for floating points
-- Support for table lookups on integers
-- Support for integration with Client / Server architectures
+
+- Compiling Python functions (that may include NumPy) to their FHE equivalents, to operate on encrypted data
+- Support for **[large collection of operators](https://docs.zama.ai/concrete/getting-started/compatibility)**
+- Partial support for **floating points**
+- Support for **table lookups on integers**
+- Support for **integration with Client / Server architectures**
 
 *Learn more features in Concrete's [documentation](https://docs.zama.ai/concrete/readme).*
-<br></br>
-
 
 <p align="right">
   <a href="#table-of-contents" > ↑ Back to top </a> 
@@ -147,7 +148,7 @@ for example in examples:
     result = circuit.encrypt_run_decrypt(*example)
     print(f"Evaluation of {' + '.join(map(str, example))} homomorphically = {result}")
 ```
-*This example is explained in more detail in the [Quick Start](docs/getting-started/quick_start).*
+*This example is explained in more detail [in this part of documentation](docs/getting-started/quick_start).*
 
 <p align="right">
   <a href="#table-of-contents" > ↑ Back to top </a> 
