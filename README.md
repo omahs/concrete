@@ -32,6 +32,7 @@
    - [Installation](#-installation)
    - [A simple example](#-a-simple-example)
 - **[Resources](#resources)**
+   - [Concrete deep dive](#-concrete-deep-dive)
    - [Tutorials](#-tutorials)
    - [Documentation](#-documentation)
 - **[Working with Concrete](working-with-concrete)**
@@ -156,22 +157,25 @@ for example in examples:
 
 ## Resources 
 
-### 🟨 Tutorials
-
-Various tutorials are proposed in the documentation to help you start writing homomorphic programs:
-
-- How to use Concrete with [Decorators](https://docs.zama.ai/concrete/tutorials/decorator)
-- Partial support of [Floating Points](https://docs.zama.ai/concrete/tutorials/floating_points)
-- How to perform [Table Lookup](https://docs.zama.ai/concrete/tutorials/table_lookups)
-
-If you have built awesome projects using Concrete, feel free to let us know and we'll link to it.
+### 🟨 Concrete deep dive
+- [Part I: Concrete, Zama's Fully Homomorphic Compiler](https://www.zama.ai/post/zama-concrete-fully-homomorphic-encryption-compiler)
+- [Part II: The Architecture of Concrete, Zama's Fully Homomorphic Encryption Compiler Leveraging MLIR](https://www.zama.ai/post/the-architecture-of-concrete-zama-fully-homomorphic-encryption-compiler-leveraging-mlir)
 <br></br>
+
+### 🟨 Tutorials
+- [The Encrypted Game of Life in Python Using Concrete](https://www.zama.ai/post/the-encrypted-game-of-life-using-concrete-python)
+- [Encrypted Key-value Database Using Homomorphic Encryption](https://www.zama.ai/post/encrypted-key-value-database-using-homomorphic-encryption)
+- [[Video tutorial] How To Get Started With Concrete - Zama's Fully Homomorphic Encryption Compiler](https://www.zama.ai/post/how-to-started-with-concrete-zama-fully-homomorphic-encryption-compiler)
+- [[Video tutorial] Dive into Concrete - Zama's Fully Homomorphic Encryption Compiler](https://www.zama.ai/post/video-tutorial-dive-into-concrete-zamas-fully-homomorphic-encryption-compiler)
+- [SHA-256 Implementation Using Concrete](https://github.com/zama-ai/concrete/blob/main/docs/application-tutorial/sha256.ipynb)
+
+*Explore more useful resources in [Concrete tutorials](https://docs.zama.ai/concrete/tutorials/) and [Awesome Zama repo](https://github.com/zama-ai/awesome-zama)*
+
 
 
 ### 🟨 Documentation
 
 Full, comprehensive documentation is available at [https://docs.zama.ai/concrete](https://docs.zama.ai/concrete).
-<br></br>
 
 <p align="right">
   <a href="#table-of-contents" > ↑ Back to top </a> 
@@ -180,13 +184,6 @@ Full, comprehensive documentation is available at [https://docs.zama.ai/concrete
 
 
 ## Working with Concrete
-
-### 🟨 Contributing 
-
-There are two ways to contribute to Concrete. You can:
-- Open issues to report bugs and typos or suggest ideas;
-- Request to become an official contributor by emailing hello@zama.ai. Only approved contributors can send pull requests (PRs), so get in touch before you do.
-<br></br>
 
 ### 🟨 Citations
 To cite Concrete in academic papers, please use the following entry:
@@ -199,6 +196,14 @@ To cite Concrete in academic papers, please use the following entry:
   note={\url{https://github.com/zama-ai/concrete}},
 }
 ```
+### 🟨 Contributing 
+
+There are two ways to contribute to Concrete. You can:
+- O[pen issues](https://github.com/zama-ai/concrete/issues/new/choose) to report bugs and typos, or to suggest new ideas
+- Request to become an official contributor by emailing hello@zama.ai. (becoming an approved contributor involves signing our Contributor License Agreement (CLA))
+  
+Only approved contributors can send pull requests (PRs), so get in touch before you do!
+<br></br>
 
 ### 🟨 License
 This software is distributed under the **BSD-3-Clause-Clear** license. If you have any questions, please contact us at hello@zama.ai.
