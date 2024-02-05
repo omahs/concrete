@@ -227,7 +227,7 @@ public:
               TFHE::BatchedBootstrapGLWEOp, TFHE::EncodeExpandLutForBootstrapOp,
               TFHE::EncodeLutForCrtWopPBSOp, TFHE::EncodePlaintextWithCrtOp,
               TFHE::WopPBSGLWEOp, mlir::func::ReturnOp,
-              Tracing::TraceCiphertextOp>([&](auto op) {
+              Tracing::TraceCiphertextOp, tensor::EmptyOp>([&](auto op) {
           converge<NoTypeConstraint>(op, state, inferredTypes);
         })
 
@@ -280,6 +280,10 @@ public:
                        SameOperandAndResultTypeConstraint<1, 0>>(op, state,
                                                                  inferredTypes);
             })
+        .Case<mlir::tensor::ParallelInsertSliceOp>([&](auto op) {
+          converge<SameOperandElementTypeConstraint<0, 1>>(op, state,
+                                                           inferredTypes);
+        })
         .Case<mlir::tensor::ExtractOp, mlir::tensor::ExtractSliceOp,
               mlir::tensor::CollapseShapeOp>([&](auto op) {
           converge<SameOperandAndResultElementTypeConstraint<0, 0>>(
@@ -310,6 +314,24 @@ public:
 
             cs.addConstraint<DynamicSameTypeConstraint<DynamicFunctorYield>>(
                 [=]() { return result; }, [=]() { return terminatorOperand; });
+          }
+
+          cs.converge(op, *this, state, inferredTypes);
+        })
+
+        .Case<mlir::scf::ForallOp>([&](mlir::scf::ForallOp op) {
+          TypeConstraintSet<> cs;
+
+          for (auto [output, outputBlockArg, result] :
+               llvm::zip_equal(op.getOutputs(), op.getOutputBlockArguments(),
+                               op.getResults())) {
+            // Ensure that shared outputs and the corresponding block
+            // arguments all have the same type
+            cs.addConstraint<DynamicSameTypeConstraint<DynamicFunctorYield>>(
+                [=]() { return output; }, [=]() { return outputBlockArg; });
+
+            cs.addConstraint<DynamicSameTypeConstraint<DynamicFunctorYield>>(
+                [=]() { return output; }, [=]() { return result; });
           }
 
           cs.converge(op, *this, state, inferredTypes);
