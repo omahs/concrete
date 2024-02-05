@@ -108,8 +108,10 @@ struct RuntimeContextManager {
   // use multiple keys, should have a map.
   RuntimeContext *context;
   bool allocated = false;
+  bool lazy_key_transfer = false;
 
-  RuntimeContextManager() {
+  RuntimeContextManager(bool lazy = false) :
+    lazy_key_transfer(lazy) {
     context = nullptr;
     _dfr_node_level_runtime_context_manager = this;
   }
@@ -118,46 +120,15 @@ struct RuntimeContextManager {
     assert(context == nullptr &&
            "Only one RuntimeContext can be used at a time.");
     context = (RuntimeContext *)ctx;
-    if (!context) {
-      context = new mlir::concretelang::RuntimeContext(ServerKeyset());
-      allocated = true;
-    }
-    return;
 
-#if 0
-    // When the root node does not require a context, we still need to
-    // broadcast an empty keyset to remote nodes as they cannot know
-    // ahead of time and avoid waiting for the broadcast. Instantiate
-    // an empty context for this.
-    if (_dfr_is_root_node() && ctx == nullptr) {
-      context = new mlir::concretelang::RuntimeContext(ServerKeyset());
-      allocated = true;
+    if (lazy_key_transfer) {
+      if (!_dfr_is_root_node()) {
+	context = new mlir::concretelang::DistributedRuntimeContext(ServerKeyset());
+	allocated = true;
+      }
+      return;
     }
 
-    // Root node broadcasts the evaluation keys and each remote
-    // instantiates a local RuntimeContext.
-    if (_dfr_is_root_node()) {
-      hpx::collectives::broadcast_to("ksk_keystore", context->getKeys().lweKeyswitchKeys.size());
-      hpx::collectives::broadcast_to("bsk_keystore", context->getKeys().lweBootstrapKeys.size());
-      hpx::collectives::broadcast_to("pksk_keystore",
-				     context->getKeys().packingKeyswitchKeys.size());
-    } else {
-      auto kskSizeFut =
-          hpx::collectives::broadcast_from<size_t>(
-              "ksk_keystore");
-      auto bskSizeFut =
-          hpx::collectives::broadcast_from<size_t>(
-              "bsk_keystore");
-      auto pkskSizeFut =
-          hpx::collectives::broadcast_from<size_t>(
-              "pksk_keystore");
-      size_t kskwSize = kskSizeFut.get();
-      size_t bskwSize = bskSizeFut.get();
-      size_t pkskwSize = pkskSizeFut.get();
-      context = new mlir::concretelang::RuntimeContext(
-          ServerKeyset{bskw.keys, kskw.keys, pkskw.keys});
-    }
-#else
     // When the root node does not require a context, we still need to
     // broadcast an empty keyset to remote nodes as they cannot know
     // ahead of time and avoid waiting for the broadcast. Instantiate
@@ -193,7 +164,6 @@ struct RuntimeContextManager {
       context = new mlir::concretelang::RuntimeContext(
           ServerKeyset{bskw.keys, kskw.keys, pkskw.keys});
     }
-#endif
   }
 
   RuntimeContext *getContext() { return context; }

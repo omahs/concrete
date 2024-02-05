@@ -97,41 +97,25 @@ RuntimeContext::RuntimeContext(ServerKeyset serverKeyset)
   }
 }
 
-#ifndef CONCRETELANG_DATAFLOW_EXECUTION_ENABLED
-const uint64_t *RuntimeContext::keyswitch_key_buffer(size_t keyId) {
-  return serverKeyset.lweKeyswitchKeys[keyId].getBuffer().data();
-}
-
-const std::complex<double> *
-RuntimeContext::fourier_bootstrap_key_buffer(size_t keyId) {
-  return fourier_bootstrap_keys[keyId]->data();
-}
-
-const uint64_t *RuntimeContext::fp_keyswitch_key_buffer(size_t keyId) {
-  return serverKeyset.packingKeyswitchKeys[keyId].getRawPtr();
-}
-
-const struct Fft *RuntimeContext::fft(size_t keyId) { return ffts[keyId].fft; }
-#else
-const uint64_t *RuntimeContext::keyswitch_key_buffer(size_t keyId) {
+const uint64_t *DistributedRuntimeContext::keyswitch_key_buffer(size_t keyId) {
   if (dfr::_dfr_is_root_node())
     return serverKeyset.lweKeyswitchKeys[keyId].getBuffer().data();
 
-  std::lock_guard<std::mutex> guard(dc.cm_guard);
-  if (dc.ksks.find(keyId) == dc.ksks.end()) {
+  std::lock_guard<std::mutex> guard(cm_guard);
+  if (ksks.find(keyId) == ksks.end()) {
     _dfr_get_ksk getKskAction;
     dfr::KeyWrapper<LweKeyswitchKey> kskw =
         getKskAction(hpx::find_root_locality(), keyId);
-    dc.ksks.insert(std::pair<size_t, LweKeyswitchKey>(keyId, kskw.keys[0]));
+    ksks.insert(std::pair<size_t, LweKeyswitchKey>(keyId, kskw.keys[0]));
   }
-  auto it = dc.ksks.find(keyId);
-  assert(it != dc.ksks.end());
+  auto it = ksks.find(keyId);
+  assert(it != ksks.end());
   return it->second.getBuffer().data();
 }
 
-void RuntimeContext::getBSKonNode(size_t keyId) {
-  assert(dc.fbks.find(keyId) == dc.fbks.end());
-  assert(dc.ffts.find(keyId) == dc.ffts.end());
+void DistributedRuntimeContext::getBSKonNode(size_t keyId) {
+  assert(fbks.find(keyId) == fbks.end());
+  assert(dffts.find(keyId) == dffts.end());
   _dfr_get_bsk getBskAction;
   dfr::KeyWrapper<LweBootstrapKey> bskw =
       getBskAction(hpx::find_root_locality(), keyId);
@@ -168,55 +152,54 @@ void RuntimeContext::getBSKonNode(size_t keyId) {
       input_lwe_dimension, fft.fft, scratch, scratch_size);
 
   // Store the fourier_bootstrap_key in the context
-  dc.fbks.insert(
+  fbks.insert(
       std::pair<size_t, std::shared_ptr<std::vector<std::complex<double>>>>(
           keyId, fourier_data));
-  dc.ffts.insert(std::pair<size_t, FFT>(keyId, std::move(fft)));
+  dffts.insert(std::pair<size_t, FFT>(keyId, std::move(fft)));
   free(scratch);
 }
 
 const std::complex<double> *
-RuntimeContext::fourier_bootstrap_key_buffer(size_t keyId) {
+DistributedRuntimeContext::fourier_bootstrap_key_buffer(size_t keyId) {
   if (dfr::_dfr_is_root_node())
     return fourier_bootstrap_keys[keyId]->data();
 
-  std::lock_guard<std::mutex> guard(dc.cm_guard);
-  if (dc.fbks.find(keyId) == dc.fbks.end())
+  std::lock_guard<std::mutex> guard(cm_guard);
+  if (fbks.find(keyId) == fbks.end())
     getBSKonNode(keyId);
-  auto it = dc.fbks.find(keyId);
-  assert(it != dc.fbks.end());
+  auto it = fbks.find(keyId);
+  assert(it != fbks.end());
   return it->second->data();
 }
 
-const uint64_t *RuntimeContext::fp_keyswitch_key_buffer(size_t keyId) {
+const uint64_t *DistributedRuntimeContext::fp_keyswitch_key_buffer(size_t keyId) {
   if (dfr::_dfr_is_root_node())
     return serverKeyset.packingKeyswitchKeys[keyId].getRawPtr();
 
-  std::lock_guard<std::mutex> guard(dc.cm_guard);
-  if (dc.ksks.find(keyId) == dc.ksks.end()) {
+  std::lock_guard<std::mutex> guard(cm_guard);
+  if (ksks.find(keyId) == ksks.end()) {
     _dfr_get_pksk getPKskAction;
     dfr::KeyWrapper<PackingKeyswitchKey> pkskw =
         getPKskAction(hpx::find_root_locality(), keyId);
-    dc.pksks.insert(
+    pksks.insert(
         std::pair<size_t, PackingKeyswitchKey>(keyId, pkskw.keys[0]));
   }
-  auto it = dc.pksks.find(keyId);
-  assert(it != dc.pksks.end());
+  auto it = pksks.find(keyId);
+  assert(it != pksks.end());
   return it->second.getRawPtr();
 }
 
-const struct Fft *RuntimeContext::fft(size_t keyId) {
+const struct Fft *DistributedRuntimeContext::fft(size_t keyId) {
   if (dfr::_dfr_is_root_node())
     return ffts[keyId].fft;
 
-  std::lock_guard<std::mutex> guard(dc.cm_guard);
-  if (dc.ffts.find(keyId) == dc.ffts.end())
+  std::lock_guard<std::mutex> guard(cm_guard);
+  if (dffts.find(keyId) == dffts.end())
     getBSKonNode(keyId);
-  auto it = dc.ffts.find(keyId);
-  assert(it != dc.ffts.end());
+  auto it = dffts.find(keyId);
+  assert(it != dffts.end());
   return it->second.fft;
 }
-#endif
 
 } // namespace concretelang
 } // namespace mlir

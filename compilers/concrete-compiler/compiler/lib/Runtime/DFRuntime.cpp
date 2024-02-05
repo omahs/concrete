@@ -316,7 +316,16 @@ static inline void _dfr_start_impl(int argc, char *argv[]) {
   num_nodes = hpx::get_num_localities().get();
 
   new WorkFunctionRegistry();
-  new RuntimeContextManager();
+
+  char *env = getenv("DFR_LAZY_KEY_TRANSFER");
+  bool lazy = false;
+  if (env != nullptr)
+    if (strncmp(env, "True", 4) || strncmp(env, "true", 4) ||
+	strncmp(env, "On", 2) || strncmp(env, "on", 2) ||
+	strncmp(env, "1", 1))
+      lazy = true;
+  new RuntimeContextManager(lazy);
+
   _dfr_jit_phase_barrier = new hpx::distributed::barrier(
       "phase_barrier", num_nodes, hpx::get_locality_id());
   _dfr_startup_barrier = new hpx::distributed::barrier(

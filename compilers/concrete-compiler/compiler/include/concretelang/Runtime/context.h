@@ -38,19 +38,11 @@ typedef struct FFT {
   size_t polynomial_size;
 } FFT;
 
-struct DistributedContext {
-  std::mutex cm_guard;
-  std::map<size_t, LweKeyswitchKey> ksks;
-  std::map<size_t, std::shared_ptr<std::vector<std::complex<double>>>> fbks;
-  std::map<size_t, FFT> ffts;
-  std::map<size_t, PackingKeyswitchKey> pksks;
-};
-
 typedef struct RuntimeContext {
 
   RuntimeContext() = delete;
   RuntimeContext(ServerKeyset serverKeyset);
-  ~RuntimeContext() {
+  virtual ~RuntimeContext() {
 #ifdef CONCRETELANG_CUDA_SUPPORT
     for (int i = 0; i < num_devices; ++i) {
       if (bsk_gpu[i] != nullptr)
@@ -61,23 +53,29 @@ typedef struct RuntimeContext {
 #endif
   };
 
-  const uint64_t *keyswitch_key_buffer(size_t keyId);
-  const std::complex<double> *fourier_bootstrap_key_buffer(size_t keyId);
-  const uint64_t *fp_keyswitch_key_buffer(size_t keyId);
-  const struct Fft *fft(size_t keyId);
+  virtual const uint64_t *keyswitch_key_buffer(size_t keyId) {
+    return serverKeyset.lweKeyswitchKeys[keyId].getBuffer().data();
+  }
+
+  virtual const std::complex<double> *
+  fourier_bootstrap_key_buffer(size_t keyId) {
+    return fourier_bootstrap_keys[keyId]->data();
+  }
+
+  virtual const uint64_t *fp_keyswitch_key_buffer(size_t keyId) {
+    return serverKeyset.packingKeyswitchKeys[keyId].getRawPtr();
+  }
+
+  virtual const struct Fft *fft(size_t keyId) { return ffts[keyId].fft; }
 
   const ServerKeyset getKeys() const { return serverKeyset; }
 
-private:
+protected:
   ServerKeyset serverKeyset;
   std::vector<std::shared_ptr<std::vector<std::complex<double>>>>
       fourier_bootstrap_keys;
   std::vector<FFT> ffts;
 
-  DistributedContext dc;
-#ifdef CONCRETELANG_DATAFLOW_EXECUTION_ENABLED
-  void getBSKonNode(size_t keyId);
-#endif
 #ifdef CONCRETELANG_CUDA_SUPPORT
 public:
   void *get_bsk_gpu(uint32_t input_lwe_dim, uint32_t poly_size, uint32_t level,
@@ -146,6 +144,26 @@ private:
   int num_devices;
 #endif
 } RuntimeContext;
+
+
+struct DistributedRuntimeContext : public RuntimeContext {
+
+  using RuntimeContext::RuntimeContext;
+  const uint64_t *keyswitch_key_buffer(size_t keyId) override;
+  const std::complex<double> *fourier_bootstrap_key_buffer(size_t keyId) override;
+  const uint64_t *fp_keyswitch_key_buffer(size_t keyId) override;
+  const struct Fft *fft(size_t keyId) override;
+
+private:
+  void getBSKonNode(size_t keyId);
+  std::mutex cm_guard;
+  std::map<size_t, LweKeyswitchKey> ksks;
+  std::map<size_t, std::shared_ptr<std::vector<std::complex<double>>>> fbks;
+  std::map<size_t, FFT> dffts;
+  std::map<size_t, PackingKeyswitchKey> pksks;
+};
+
+
 
 } // namespace concretelang
 } // namespace mlir
