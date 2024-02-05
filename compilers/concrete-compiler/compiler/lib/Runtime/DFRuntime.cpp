@@ -351,14 +351,12 @@ void _dfr_start(int64_t use_dfr_p, void *ctx) {
 
     assert(init_guard == active && "DFR runtime failed to initialise");
 
-    // If DFR is used and a runtime context is needed, and execution is
-    // distributed, then broadcast from root to all compute nodes.
-    if (num_nodes > 1 && (ctx || !_dfr_is_root_node())) {
+    // If execution is distributed, then broadcast (possibly an empty)
+    // context from root to all compute nodes.
+    if (num_nodes > 1) {
       BEGIN_TIME(&broadcast_timer);
       _dfr_node_level_runtime_context_manager->setContext(ctx);
     }
-    // If this is not JIT, then the remote nodes never reach _dfr_stop,
-    // so root should not instantiate this barrier.
     if (_dfr_is_root_node())
       _dfr_startup_barrier->wait();
 

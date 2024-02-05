@@ -17,6 +17,7 @@
 
 #include "concretelang/Runtime/DFRuntime.hpp"
 #include "concretelang/Runtime/context.h"
+#include "concretelang/Runtime/dfr_debug_interface.h"
 
 #include "concretelang/Common/Error.h"
 #include "concretelang/Common/Keys.h"
@@ -33,10 +34,7 @@ namespace concretelang {
 namespace dfr {
 
 struct RuntimeContextManager;
-namespace {
-static void *dl_handle;
-static RuntimeContextManager *_dfr_node_level_runtime_context_manager;
-} // namespace
+extern RuntimeContextManager *_dfr_node_level_runtime_context_manager;
 
 template <typename LweKeyType> struct KeyWrapper {
   std::vector<LweKeyType> keys;
@@ -109,6 +107,7 @@ struct RuntimeContextManager {
   // TODO: this is only ok so long as we don't change keys. Once we
   // use multiple keys, should have a map.
   RuntimeContext *context;
+  bool allocated = false;
 
   RuntimeContextManager() {
     context = nullptr;
@@ -118,12 +117,59 @@ struct RuntimeContextManager {
   void setContext(void *ctx) {
     assert(context == nullptr &&
            "Only one RuntimeContext can be used at a time.");
+    context = (RuntimeContext *)ctx;
+    if (!context) {
+      context = new mlir::concretelang::RuntimeContext(ServerKeyset());
+      allocated = true;
+    }
+    return;
+
+#if 0
+    // When the root node does not require a context, we still need to
+    // broadcast an empty keyset to remote nodes as they cannot know
+    // ahead of time and avoid waiting for the broadcast. Instantiate
+    // an empty context for this.
+    if (_dfr_is_root_node() && ctx == nullptr) {
+      context = new mlir::concretelang::RuntimeContext(ServerKeyset());
+      allocated = true;
+    }
 
     // Root node broadcasts the evaluation keys and each remote
     // instantiates a local RuntimeContext.
     if (_dfr_is_root_node()) {
-      RuntimeContext *context = (RuntimeContext *)ctx;
+      hpx::collectives::broadcast_to("ksk_keystore", context->getKeys().lweKeyswitchKeys.size());
+      hpx::collectives::broadcast_to("bsk_keystore", context->getKeys().lweBootstrapKeys.size());
+      hpx::collectives::broadcast_to("pksk_keystore",
+				     context->getKeys().packingKeyswitchKeys.size());
+    } else {
+      auto kskSizeFut =
+          hpx::collectives::broadcast_from<size_t>(
+              "ksk_keystore");
+      auto bskSizeFut =
+          hpx::collectives::broadcast_from<size_t>(
+              "bsk_keystore");
+      auto pkskSizeFut =
+          hpx::collectives::broadcast_from<size_t>(
+              "pksk_keystore");
+      size_t kskwSize = kskSizeFut.get();
+      size_t bskwSize = bskSizeFut.get();
+      size_t pkskwSize = pkskSizeFut.get();
+      context = new mlir::concretelang::RuntimeContext(
+          ServerKeyset{bskw.keys, kskw.keys, pkskw.keys});
+    }
+#else
+    // When the root node does not require a context, we still need to
+    // broadcast an empty keyset to remote nodes as they cannot know
+    // ahead of time and avoid waiting for the broadcast. Instantiate
+    // an empty context for this.
+    if (_dfr_is_root_node() && ctx == nullptr) {
+      context = new mlir::concretelang::RuntimeContext(ServerKeyset());
+      allocated = true;
+    }
 
+    // Root node broadcasts the evaluation keys and each remote
+    // instantiates a local RuntimeContext.
+    if (_dfr_is_root_node()) {
       KeyWrapper<LweKeyswitchKey> kskw(context->getKeys().lweKeyswitchKeys);
       KeyWrapper<LweBootstrapKey> bskw(context->getKeys().lweBootstrapKeys);
       KeyWrapper<PackingKeyswitchKey> pkskw(
@@ -147,18 +193,26 @@ struct RuntimeContextManager {
       context = new mlir::concretelang::RuntimeContext(
           ServerKeyset{bskw.keys, kskw.keys, pkskw.keys});
     }
+#endif
   }
 
   RuntimeContext *getContext() { return context; }
 
   void clearContext() {
     if (context != nullptr)
-      delete context;
+      // On root node deallocate only if allocated independently here
+      if (!_dfr_is_root_node() || allocated)
+        delete context;
     context = nullptr;
   }
 };
 
+KeyWrapper<LweKeyswitchKey> getKsk(size_t keyId);
+KeyWrapper<LweBootstrapKey> getBsk(size_t keyId);
+KeyWrapper<PackingKeyswitchKey> getPKsk(size_t keyId);
+
 } // namespace dfr
 } // namespace concretelang
 } // namespace mlir
+
 #endif

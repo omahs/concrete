@@ -38,6 +38,14 @@ typedef struct FFT {
   size_t polynomial_size;
 } FFT;
 
+struct DistributedContext {
+  std::mutex cm_guard;
+  std::map<size_t, LweKeyswitchKey> ksks;
+  std::map<size_t, std::shared_ptr<std::vector<std::complex<double>>>> fbks;
+  std::map<size_t, FFT> ffts;
+  std::map<size_t, PackingKeyswitchKey> pksks;
+};
+
 typedef struct RuntimeContext {
 
   RuntimeContext() = delete;
@@ -53,19 +61,10 @@ typedef struct RuntimeContext {
 #endif
   };
 
-  const uint64_t *keyswitch_key_buffer(size_t keyId) {
-    return serverKeyset.lweKeyswitchKeys[keyId].getBuffer().data();
-  }
-
-  const std::complex<double> *fourier_bootstrap_key_buffer(size_t keyId) {
-    return fourier_bootstrap_keys[keyId]->data();
-  }
-
-  const uint64_t *fp_keyswitch_key_buffer(size_t keyId) {
-    return serverKeyset.packingKeyswitchKeys[keyId].getRawPtr();
-  }
-
-  const struct Fft *fft(size_t keyId) { return ffts[keyId].fft; }
+  const uint64_t *keyswitch_key_buffer(size_t keyId);
+  const std::complex<double> *fourier_bootstrap_key_buffer(size_t keyId);
+  const uint64_t *fp_keyswitch_key_buffer(size_t keyId);
+  const struct Fft *fft(size_t keyId);
 
   const ServerKeyset getKeys() const { return serverKeyset; }
 
@@ -75,6 +74,10 @@ private:
       fourier_bootstrap_keys;
   std::vector<FFT> ffts;
 
+  DistributedContext dc;
+#ifdef CONCRETELANG_DATAFLOW_EXECUTION_ENABLED
+  void getBSKonNode(size_t keyId);
+#endif
 #ifdef CONCRETELANG_CUDA_SUPPORT
 public:
   void *get_bsk_gpu(uint32_t input_lwe_dim, uint32_t poly_size, uint32_t level,
