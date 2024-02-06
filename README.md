@@ -13,7 +13,7 @@
     <img src="https://img.shields.io/github/v/release/zama-ai/concrete?style=flat-square">
   </a>
   <!-- License badge -->
-  <a href="#license">
+  <a href="#-license">
     <img src="https://img.shields.io/badge/License-BSD--3--Clause--Clear-orange?style=flat-square">
   </a>
 <!-- Zama Bounty Program -->
@@ -35,7 +35,7 @@
    - [Concrete deep dive](#-concrete-deep-dive)
    - [Tutorials](#-tutorials)
    - [Documentation](#-documentation)
-- **[Working with Concrete](working-with-concrete)**
+- **[Working with Concrete](#working-with-concrete)**
    - [Citations](#-citations)
    - [Contributing](#-contributing)
    - [License](#-license)
@@ -100,7 +100,7 @@ You can get the concrete-python docker image by pulling the latest docker image:
 docker pull zamafhe/concrete-python:v2.0.0
 ```
 
-*Find more detailed installation instructions in [this part of the documentation](docs/getting-started/installing.md)*
+*Find more detailed installation instructions in [this part of the documentation](https://docs.zama.ai/concrete/getting-started/installing)*
 <br></br>
 
 ### 🟨 A simple example
@@ -149,7 +149,7 @@ for example in examples:
     result = circuit.encrypt_run_decrypt(*example)
     print(f"Evaluation of {' + '.join(map(str, example))} homomorphically = {result}")
 ```
-*This example is explained in more detail [in this part of documentation](docs/getting-started/quick_start).*
+*This example is explained in more detail [in this part of the documentation](https://docs.zama.ai/concrete/getting-started/quick_start).*
 
 <p align="right">
   <a href="#table-of-contents" > ↑ Back to top </a> 
@@ -199,10 +199,10 @@ To cite Concrete in academic papers, please use the following entry:
 ### 🟨 Contributing 
 
 There are two ways to contribute to Concrete. You can:
-- O[pen issues](https://github.com/zama-ai/concrete/issues/new/choose) to report bugs and typos, or to suggest new ideas
-- Request to become an official contributor by emailing hello@zama.ai. (becoming an approved contributor involves signing our Contributor License Agreement (CLA))
-  
-Only approved contributors can send pull requests (PRs), so get in touch before you do!
+- [Open issues](https://github.com/zama-ai/concrete/issues/new/choose) to report bugs and typos, or to suggest new ideas
+- Request to become an official contributor by emailing hello@zama.ai.
+
+Becoming an approved contributor involves signing our Contributor License Agreement (CLA)). Only approved contributors can send pull requests (PRs), so get in touch before you do!
 <br></br>
 
 ### 🟨 License
