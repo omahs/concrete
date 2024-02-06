@@ -62,6 +62,9 @@ jobs:
       - name: Create build directory
         run: mkdir build
 
+      - name: Setup rust toolchain for concrete-cpu
+        uses: ./.github/workflows/setup_rust_toolchain_for_concrete_cpu
+
       - name: Build bindings
         uses: addnab/docker-run-action@v3
         if: ${{ !contains(inputs.instance_type, 'p3') }}

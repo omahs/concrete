@@ -63,6 +63,9 @@ jobs:
           submodules: recursive
           token: ${{ secrets.CONCRETE_ACTIONS_TOKEN }}
 
+      - name: Setup rust toolchain for concrete-cpu
+        uses: ./.github/workflows/setup_rust_toolchain_for_concrete_cpu
+
       - name: Create build dir
         run: mkdir build
 
